@@ -17,6 +17,7 @@ import           Brick.AttrMap
 import           Brick.Widgets.Center
   ( center
   , hCenter
+  , vCenter
   )
 
 import           Brick.Widgets.Border
@@ -24,11 +25,14 @@ import           Brick.Widgets.Border
 
 import           Brick.Widgets.Core
   ( txt
+  , str
   , vBox
   , vLimit
   , hLimit
   , (<=>)
   , padTop
+  , padRight
+  , padBottom
   , withDefAttr
   , emptyWidget )
 import qualified Brick.AttrMap as A
@@ -40,6 +44,8 @@ import           Brick.Util
 import qualified Graphics.Vty as V
 import qualified Data.Text as Text
 
+import Data.Maybe (fromMaybe)
+
 import qualified Control.Exception as E
 
 data Name = Slibox
@@ -49,14 +55,13 @@ errorAttr :: AttrName
 errorAttr = "This bad, yo"
 
 drawUI :: FB.FileBrowser Name -> [T.Widget Name]
-drawUI b = [center $ ui <=> help]
+drawUI b = [ui <=> help <=> view]
   where
-    ui   = hCenter $
-           vLimit 15 $
-           hLimit 50 $
-           borderWithLabel (txt "Choose a file") $
+    ui   = vLimit 20 $
+           borderWithLabel (txt "Cards (files for now)") $
            FB.renderFileBrowser True b
     help = padTop (T.Pad 1) $
+           padBottom (T.Pad 1) $
            vBox [ case fileBrowserException b of
                     Nothing -> emptyWidget
                     Just e  -> hCenter $ withDefAttr errorAttr $
@@ -66,6 +71,10 @@ drawUI b = [center $ ui <=> help]
                 , hCenter $ txt "Enter: change directory or select file"
                 , hCenter $ txt "Esc: quit"
                 ]
+    view = borderWithLabel (txt "Card Contents:") $
+           vBox [ padRight T.Max $ padBottom T.Max $ str fileName ]
+
+    fileName = fromMaybe "N/A" $ fmap fileInfoSanitizedFilename $ FB.fileBrowserCursor b
 
 -- We only care about a few kinds of events here:
 --
